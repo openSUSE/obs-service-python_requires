@@ -25,10 +25,9 @@ def read_from_tarball(tar_name, filename):
 
     try:
         tar = tarfile.open(tar_name)
-        candidates = sorted(filter(lambda f: f.endswith(filename),
-                                   tar.getnames()),
-                            key=len)
-        changelog_file = candidates[0]
+        changelog_file = min((f for f in tar.getnames()
+                              if f.endswith(filename)),
+                             key=len)
         t = tar.getmember(changelog_file)
         changelog = tar.extractfile(t).read()
     except StopIteration:
