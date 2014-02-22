@@ -22,18 +22,17 @@ import tarfile
 
 
 def read_from_tarball(tar_name, filename):
-
-    try:
-        tar = tarfile.open(tar_name)
-        changelog_file = min((f for f in tar.getnames()
-                              if f.endswith(filename)),
-                             key=len)
+    with tarfile.open(tar_name) as tar:
+        try:
+            changelog_file = min((f for f in tar.getnames()
+                                  if f.endswith(filename)),
+                                 key=len)
+        except ValueError:
+            raise Exception("Coud not find a file %s in %s" %
+                            (filename, tar_name))
         t = tar.getmember(changelog_file)
         changelog = tar.extractfile(t).read()
-    except StopIteration:
-        raise Exception("Coud not find a file %s in %s" % (filename, tar_name))
-    finally:
-        tar.close()
+
     return changelog
 
 
@@ -109,7 +108,6 @@ if __name__ == '__main__':
         test_requires = read_from_tarball(filename, '/test-requirements.txt')
     except Exception:
         test_requires = ""
-        pass
 
     d = dict()
 
@@ -147,7 +145,7 @@ if __name__ == '__main__':
         'python-docutils', 'python-oslo.sphinx', 'python-oslosphinx')
 
     real_requires = dict()
-    for k in set(d.keys()).difference(ignore_requires):
+    for k in set(d).difference(ignore_requires):
         real_requires[k] = d[k]
 
     update_spec_files(real_requires)
