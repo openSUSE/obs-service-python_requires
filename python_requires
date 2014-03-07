@@ -45,19 +45,19 @@ def parse_update_spec_file(specfile, contents, run_requires):
 
         all_requires.add(d)
 
-        if re.search(r'^(Build)?Requires:\s+%s' % (d), contents,
+        if re.search(r'^(Build)?Requires(?:\(.*\))?:\s+%s' % (d), contents,
                      flags=re.MULTILINE | re.IGNORECASE) >= 0:
             found_requires.add(d)
 
         if run_requires[d]:
             contents = re.sub(
-                r'^(Requires:[ \t]+)(%s)(?:[ \t].*)?$' % (d),
+                r'^(Requires(?:\(.*\))?:[ \t]+)(%s)(?:[ \t].*)?$' % (d),
                 r'\g<1>\g<2> >= %s' % (run_requires[d]),
                 contents, flags=re.MULTILINE | re.IGNORECASE)[:]
 
     if not specfile.endswith("-doc.spec"):
         spec_requires = set()
-        for m in re.finditer(r"^Requires:[ \t]+python-([\w\d\.-]+)",
+        for m in re.finditer(r"^Requires(?:\(.*\))?:[ \t]+python-([\w\d\.-]+)",
                              contents, flags=re.MULTILINE | re.IGNORECASE):
             spec_requires.add("python-%s" % m.group(1))
 
