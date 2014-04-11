@@ -17,6 +17,7 @@
 import argparse
 import glob
 import os
+import pkg_resources
 import re
 import tarfile
 
@@ -37,7 +38,6 @@ def read_from_tarball(tar_name, filename):
 
 
 def parse_update_spec_file(specfile, contents, run_requires):
-
     found_requires = set()
     all_requires = set()
 
@@ -84,6 +84,21 @@ def update_spec_files(run_requires):
             f.write(contents)
         finally:
             f.close()
+
+
+def convert_pip_version_to_rpm(pip_version):
+
+    rpm_version = []
+    for s in pkg_resources.parse_version(pip_version)[:-1]:
+        if s.isdigit():
+            rpm_version.append(str(int(s)))
+            continue
+        elif s.startswith('*final'):
+            rpm_version.append('0')
+        else:
+            break
+
+    return '.'.join(rpm_version)
 
 
 if __name__ == '__main__':
@@ -133,7 +148,8 @@ if __name__ == '__main__':
 
         r = re.match("^(.*)[<>=]=([^ ]*)", l)
         if r:
-            d["python-%s" % (r.group(1))] = r.group(2)
+            version_dep = convert_pip_version_to_rpm(r.group(2))
+            d["python-%s" % (r.group(1))] = version_dep
 
         elif len(l):
             d["python-%s" % (l)] = None
