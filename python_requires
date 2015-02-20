@@ -117,10 +117,14 @@ if __name__ == '__main__':
     candidates.sort(key=lambda i: (-len(i)))
     filename = candidates[0]
 
-    try:
-        run_requires = read_from_tarball(filename, '/requirements.txt')
-    except Exception:
-        run_requires = ""
+    for f in ('requirements-py2.txt', '/requirements.txt'):
+        try:
+            run_requires = read_from_tarball(filename, f)
+        except Exception:
+            run_requires = ""
+        else:
+            break
+
     try:
         test_requires = read_from_tarball(filename, '/test-requirements.txt')
     except Exception:
