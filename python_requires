@@ -17,9 +17,10 @@
 import argparse
 import glob
 import os
-import pkg_resources
 import re
 import tarfile
+
+import pkg_resources
 
 
 def read_from_tarball(tar_name, filename):
@@ -49,11 +50,11 @@ def parse_update_spec_file(specfile, contents, run_requires):
                      flags=re.MULTILINE | re.IGNORECASE) >= 0:
             found_requires.add(d)
 
-        if run_requires[d]:
-            contents = re.sub(
-                r'^(Requires(?:\(.*\))?:[ \t]+)(%s)(?:[ \t].*)?$' % (d),
-                r'\g<1>\g<2> >= %s' % (run_requires[d]),
-                contents, flags=re.MULTILINE | re.IGNORECASE)[:]
+        contents = re.sub(
+            r'^(Requires(?:\(.*\))?:[ \t]+)(%s)(?:[ \t].*)?$' % (d),
+            r'\g<1>\g<2>%s' %
+            (" >= " + run_requires[d] if run_requires[d] else ""),
+            contents, flags=re.MULTILINE | re.IGNORECASE)[:]
 
     if not specfile.endswith("-doc.spec"):
         spec_requires = set()
@@ -138,8 +139,6 @@ if __name__ == '__main__':
         # strip away whitespace
         l = re.sub('[ \t]*', '', l)
 
-        l = l.partition(',')[0]
-
         if not l or l.startswith("-f"):
             continue
 
@@ -150,13 +149,25 @@ if __name__ == '__main__':
         if re.match('^python-(.*)client', l):
             l = re.sub(r'^python-(.+client)', r'\g<1>', l)
 
-        r = re.match("^(.*)[<>=]=([^ ]*)", l)
-        if r:
-            version_dep = convert_pip_version_to_rpm(r.group(2))
-            d["python-%s" % (r.group(1))] = version_dep
+        pkg = pkg_resources.Requirement.parse(l)
+        pkg_name = pkg.unsafe_name
+        version_dep = None
+        strict_version_dep = None
 
-        elif len(l):
-            d["python-%s" % (l)] = None
+        for dep in pkg.specs:
+            if dep[0] == '>=':
+                version_dep = dep[1]
+            elif dep[0] == '==':
+                strict_version_dep = dep[1]
+
+        if version_dep:
+            d["python-%s" % (pkg_name)] = version_dep
+        elif strict_version_dep:
+            # We are not as strict as upstream, we always allow newer versions
+            # otherwise upgrading is a PITA
+            d["python-%s" % (pkg_name)] = strict_version_dep
+        elif len(pkg_name):
+            d["python-%s" % (pkg_name)] = None
 
     ignore_requires = (
         'python-coverage',
