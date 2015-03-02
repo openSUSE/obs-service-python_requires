@@ -156,9 +156,18 @@ if __name__ == '__main__':
 
         for dep in pkg.specs:
             if dep[0] == '>=':
-                version_dep = dep[1]
+                # try to use the lowest version available
+                # i.e. for ">=0.8.4,>=0.9.7", select "0.8.4"
+                if not version_dep or \
+                   pkg_resources.parse_version(dep[1]) < \
+                   pkg_resources.parse_version(version_dep):
+                    version_dep = dep[1]
             elif dep[0] == '==':
-                strict_version_dep = dep[1]
+                # same here - select lowest version
+                if not strict_version_dep or \
+                   pkg_resources.parse_version(dep[1]) < \
+                   pkg_resources.parse_version(strict_version_dep):
+                    strict_version_dep = dep[1]
 
         if version_dep:
             d["python-%s" % (pkg_name)] = version_dep
