@@ -43,7 +43,6 @@ def parse_update_spec_file(specfile, contents, run_requires):
     all_requires = set()
 
     for d in run_requires:
-
         all_requires.add(d)
 
         if re.search(r'^(Build)?Requires(?:\(.*\))?:\s+%s' % (d), contents,
@@ -53,7 +52,7 @@ def parse_update_spec_file(specfile, contents, run_requires):
         contents = re.sub(
             r'^(Requires(?:\(.*\))?:[ \t]+)(%s)(?:[ \t].*)?$' % (d),
             r'\g<1>\g<2>%s' %
-            (" >= " + run_requires[d] if run_requires[d] else ""),
+            (" >= " + run_requires[d][0] if run_requires[d][0] else ""),
             contents, flags=re.MULTILINE | re.IGNORECASE)[:]
 
     if not specfile.endswith("-doc.spec"):
@@ -64,7 +63,8 @@ def parse_update_spec_file(specfile, contents, run_requires):
 
         if all_requires.difference(found_requires):
             for d in all_requires.difference(found_requires):
-                print("ERROR: %s is missing in %s" % (d, specfile))
+                print("ERROR: %s is missing in %s "
+                      "(source: %s)" % (d, specfile, run_requires[d][1]))
 
         for d in spec_requires.difference(all_requires):
             if d.lower() in all_requires:
@@ -151,6 +151,15 @@ def sanitize_requirements(requirements):
     return real_requires
 
 
+def update_requires_complete(requires_complete,
+                             requires_new, requires_new_source):
+    """update the requires_complete list of dicts with new values.
+    keep track of the source of the requirements"""
+    for key, val in requires_new.items():
+        requires_complete[key] = (val, requires_new_source)
+    return requires_complete
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Python Requires')
     parser.add_argument('--outdir',
@@ -167,19 +176,34 @@ if __name__ == '__main__':
     candidates.sort(key=lambda i: (-len(i)))
     filename = candidates[0]
 
+    # dict of tuple with requirements and their source
+    requires_complete = dict()
+
+    # test requirements
+    try:
+        test_requires_source = '/test-requirements.txt'
+        test_requires = read_from_tarball(filename, test_requires_source)
+    except Exception:
+        test_requires = ""
+
+    test_requires = sanitize_requirements(test_requires)
+    requires_complete = update_requires_complete(requires_complete,
+                                                 test_requires,
+                                                 test_requires_source)
+
+    # runtime requirements
     for f in ('requirements-py2.txt', '/requirements.txt'):
         try:
             run_requires = read_from_tarball(filename, f)
+            run_requires_source = f
         except Exception:
             run_requires = ""
         else:
             break
 
-    try:
-        test_requires = read_from_tarball(filename, '/test-requirements.txt')
-    except Exception:
-        test_requires = ""
+    run_requires = sanitize_requirements(run_requires)
+    requires_complete = update_requires_complete(requires_complete,
+                                                 run_requires,
+                                                 run_requires_source)
 
-    real_requires = sanitize_requirements(run_requires + test_requires)
-
-    update_spec_files(real_requires)
+    update_spec_files(requires_complete)
