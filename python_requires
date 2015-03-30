@@ -26,16 +26,16 @@ import pkg_resources
 def read_from_tarball(tar_name, filename):
     with tarfile.open(tar_name) as tar:
         try:
-            changelog_file = min((f for f in tar.getnames()
-                                  if f.endswith(filename)),
-                                 key=len)
+            file_found = min((f for f in tar.getnames()
+                              if f.endswith(filename)),
+                             key=len)
         except ValueError:
             raise Exception("Coud not find a file %s in %s" %
                             (filename, tar_name))
-        t = tar.getmember(changelog_file)
-        changelog = tar.extractfile(t).read()
+        t = tar.getmember(file_found)
+        file_content = tar.extractfile(t).read()
 
-    return changelog
+    return file_content
 
 
 def parse_update_spec_file(specfile, contents, run_requires):
