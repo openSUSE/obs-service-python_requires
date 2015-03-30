@@ -87,38 +87,10 @@ def update_spec_files(run_requires):
             f.close()
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Python Requires')
-    parser.add_argument('--outdir',
-                        help='osc service parameter that does nothing')
-    args = parser.parse_args()
-
-    # Try to find the tarball
-    candidates = set()
-    for d in os.listdir('.'):
-        if '.tar.' in d:
-            candidates.add(d)
-
-    candidates = list(candidates)
-    candidates.sort(key=lambda i: (-len(i)))
-    filename = candidates[0]
-
-    for f in ('requirements-py2.txt', '/requirements.txt'):
-        try:
-            run_requires = read_from_tarball(filename, f)
-        except Exception:
-            run_requires = ""
-        else:
-            break
-
-    try:
-        test_requires = read_from_tarball(filename, '/test-requirements.txt')
-    except Exception:
-        test_requires = ""
-
+def sanitize_requirements(requirements):
     d = dict()
 
-    for l in run_requires.split('\n') + test_requires.split('\n'):
+    for l in requirements.split('\n'):
         # strip away comments
         l = re.sub('#.*', ' ', l)
         # strip away whitespace
@@ -163,6 +135,7 @@ if __name__ == '__main__':
         elif len(pkg_name):
             d["python-%s" % (pkg_name)] = None
 
+    # ignore some requirements
     ignore_requires = (
         'python-coverage',
         'python-sphinx', 'python-setuptools_git',
@@ -174,5 +147,39 @@ if __name__ == '__main__':
     real_requires = dict()
     for k in set(d).difference(ignore_requires):
         real_requires[k] = d[k]
+
+    return real_requires
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Python Requires')
+    parser.add_argument('--outdir',
+                        help='osc service parameter that does nothing')
+    args = parser.parse_args()
+
+    # Try to find the tarball
+    candidates = set()
+    for d in os.listdir('.'):
+        if '.tar.' in d:
+            candidates.add(d)
+
+    candidates = list(candidates)
+    candidates.sort(key=lambda i: (-len(i)))
+    filename = candidates[0]
+
+    for f in ('requirements-py2.txt', '/requirements.txt'):
+        try:
+            run_requires = read_from_tarball(filename, f)
+        except Exception:
+            run_requires = ""
+        else:
+            break
+
+    try:
+        test_requires = read_from_tarball(filename, '/test-requirements.txt')
+    except Exception:
+        test_requires = ""
+
+    real_requires = sanitize_requirements(run_requires + test_requires)
 
     update_spec_files(real_requires)
