@@ -87,21 +87,6 @@ def update_spec_files(run_requires):
             f.close()
 
 
-def convert_pip_version_to_rpm(pip_version):
-
-    rpm_version = []
-    for s in pkg_resources.parse_version(pip_version)[:-1]:
-        if s.isdigit():
-            rpm_version.append(str(int(s)))
-            continue
-        elif s.startswith('*final'):
-            rpm_version.append('0')
-        else:
-            break
-
-    return '.'.join(rpm_version)
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Python Requires')
     parser.add_argument('--outdir',
