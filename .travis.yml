@@ -5,4 +5,5 @@ python:
 install:
   - pip install flake8 --use-mirrors
 script:
-  - flake8 python_requires
+  - flake8 python_requires tests.py
+  - python tests.py
