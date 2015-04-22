@@ -137,6 +137,7 @@ def sanitize_requirements(requirements):
 
     # ignore some requirements
     ignore_requires = (
+        'python-discover',  # not needed since we only care about >= py27
         'python-coverage',
         'python-sphinx', 'python-setuptools_git',
         'python-setuptools',
