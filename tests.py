@@ -79,6 +79,9 @@ class SanitizeRequirementsTests(unittest.TestCase):
     def test_ignore_list(self):
         self.assertEqual({},
                          pr.sanitize_requirements("coverage>=1\nsetuptools"))
+        self.assertEqual({},
+                         pr.sanitize_requirements(
+                             "hacking>=0.10.0,<0.11\nqpid-python"))
 
 
 class UpdateRequiresCompleteTest(unittest.TestCase):
