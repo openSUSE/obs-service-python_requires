@@ -142,7 +142,8 @@ def sanitize_requirements(requirements):
         'python-setuptools',
         'python-setuptools-git', 'python-distribute',
         'python-pylint', 'python-hacking',
-        'python-docutils', 'python-oslo.sphinx', 'python-oslosphinx')
+        'python-docutils', 'python-oslo.sphinx', 'python-oslosphinx',
+        'python-hacking', 'python-qpid-python')
 
     real_requires = dict()
     for k in set(d).difference(ignore_requires):
