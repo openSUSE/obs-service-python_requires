@@ -182,11 +182,14 @@ if __name__ == '__main__':
     requires_complete = dict()
 
     # test requirements
-    try:
-        test_requires_source = '/test-requirements.txt'
-        test_requires = read_from_tarball(filename, test_requires_source)
-    except Exception:
-        test_requires = ""
+    for f in ('/test-requirements-py2.txt', '/test-requirements.txt'):
+	try:
+	    test_requires = read_from_tarball(filename, f)
+	    test_requires_source = f
+	except Exception:
+	    test_requires = ""
+	else:
+            break
 
     test_requires = sanitize_requirements(test_requires)
     requires_complete = update_requires_complete(requires_complete,
@@ -194,7 +197,8 @@ if __name__ == '__main__':
                                                  test_requires_source)
 
     # runtime requirements
-    for f in ('requirements-py2.txt', '/requirements.txt'):
+    for f in ('.egg-info/requires.txt', '/requirements-py2.txt',
+              '/requirements.txt'):
         try:
             run_requires = read_from_tarball(filename, f)
             run_requires_source = f
