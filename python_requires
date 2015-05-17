@@ -112,18 +112,19 @@ def sanitize_requirements(requirements):
         strict_version_dep = None
 
         for dep in pkg.specs:
+            version = pkg_resources.parse_version(dep[1])
             if dep[0] == '>=':
                 # try to use the lowest version available
                 # i.e. for ">=0.8.4,>=0.9.7", select "0.8.4"
-                if not version_dep or \
-                   pkg_resources.parse_version(dep[1]) < \
-                   pkg_resources.parse_version(version_dep):
+                if (not version_dep or
+                        version <
+                        pkg_resources.parse_version(version_dep)):
                     version_dep = dep[1]
             elif dep[0] == '==':
                 # same here - select lowest version
-                if not strict_version_dep or \
-                   pkg_resources.parse_version(dep[1]) < \
-                   pkg_resources.parse_version(strict_version_dep):
+                if (not strict_version_dep or
+                        version <
+                        pkg_resources.parse_version(strict_version_dep)):
                     strict_version_dep = dep[1]
 
         if version_dep:
@@ -155,8 +156,11 @@ def sanitize_requirements(requirements):
 
 def update_requires_complete(requires_complete,
                              requires_new, requires_new_source):
-    """update the requires_complete list of dicts with new values.
-    keep track of the source of the requirements"""
+    """Update the requires_complete list of dicts with new values.
+
+    keep track of the source of the requirements.
+    """
+
     for key, val in requires_new.items():
         requires_complete[key] = (val, requires_new_source)
     return requires_complete
@@ -183,12 +187,12 @@ if __name__ == '__main__':
 
     # test requirements
     for f in ('/test-requirements-py2.txt', '/test-requirements.txt'):
-	try:
-	    test_requires = read_from_tarball(filename, f)
-	    test_requires_source = f
-	except Exception:
-	    test_requires = ""
-	else:
+        try:
+            test_requires = read_from_tarball(filename, f)
+            test_requires_source = f
+        except Exception:
+            test_requires = ""
+        else:
             break
 
     test_requires = sanitize_requirements(test_requires)
