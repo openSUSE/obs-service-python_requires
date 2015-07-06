@@ -95,7 +95,10 @@ def sanitize_requirements(requirements):
         l = re.sub('#.*', ' ', l)
         # strip away whitespace
         l = re.sub('[ \t]*', '', l)
-
+        # ignore for now markers (see PEP 0426 and also
+        # https://pip.pypa.io/en/latest/reference/pip_install.html#requirements-file-format
+        # TODO(toabctl): parse and use markers
+        l = l.split(";")[0]
         if not l or l.startswith("-f"):
             continue
 

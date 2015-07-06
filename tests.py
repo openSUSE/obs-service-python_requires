@@ -83,6 +83,21 @@ class SanitizeRequirementsTests(unittest.TestCase):
                          pr.sanitize_requirements(
                              "hacking>=0.10.0,<0.11\nqpid-python"))
 
+    def test_with_markers(self):
+        """ allow markers in requirement lines"""
+        self.assertEqual(
+            {"python-futures": "3.0"},
+            pr.sanitize_requirements(
+                "futures>=3.0;python_version=='2.7' or python_version=='2.6'"))
+
+    def test_with_markers_and_lowest_version(self):
+        """ allow markers in requirement lines;multiple versions specified"""
+        self.assertEqual(
+            {"python-futures": "3.0"},
+            pr.sanitize_requirements(
+                "futures>=3.0,<=4.1,!=4.0;python_version=='2.7'"
+                "or python_version=='2.6'"))
+
 
 class UpdateRequiresCompleteTest(unittest.TestCase):
     def test_empty(self):
