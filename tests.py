@@ -98,6 +98,13 @@ class SanitizeRequirementsTests(unittest.TestCase):
                 "futures>=3.0,<=4.1,!=4.0;python_version=='2.7'"
                 "or python_version=='2.6'"))
 
+    def test_with_markers_for_egg_requires(self):
+        """ allow markers in requires.txt from eggs"""
+        self.assertEqual(
+            {"python-futures": "3.0", "python-unittest2": None},
+            pr.sanitize_requirements(
+                "futures>=3.0\n[:python_version=='2.6']\nunittest2"))
+
 
 class UpdateRequiresCompleteTest(unittest.TestCase):
     def test_empty(self):
