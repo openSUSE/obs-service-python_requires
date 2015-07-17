@@ -99,7 +99,9 @@ def sanitize_requirements(requirements):
         # https://pip.pypa.io/en/latest/reference/pip_install.html#requirements-file-format
         # TODO(toabctl): parse and use markers
         l = l.split(";")[0]
-        if not l or l.startswith("-f"):
+
+        # in egg/requires.txt, there are sections starting with "[" for markers
+        if not l or l.startswith("-f") or l.startswith("["):
             continue
 
         m = re.match('^http://tarballs.openstack.org/([^/]+)/', l)
