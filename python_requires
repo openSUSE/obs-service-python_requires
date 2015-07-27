@@ -197,6 +197,7 @@ if __name__ == '__main__':
             test_requires_source = f
         except Exception:
             test_requires = ""
+            test_requires_source = ""
         else:
             break
 
