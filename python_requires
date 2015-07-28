@@ -171,12 +171,7 @@ def update_requires_complete(requires_complete,
     return requires_complete
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Python Requires')
-    parser.add_argument('--outdir',
-                        help='osc service parameter that does nothing')
-    args = parser.parse_args()
-
+def get_tarball_candidate():
     # Try to find the tarball
     candidates = set()
     for d in os.listdir('.'):
@@ -184,8 +179,18 @@ if __name__ == '__main__':
             candidates.add(d)
 
     candidates = list(candidates)
-    candidates.sort(key=lambda i: (-len(i)))
-    filename = candidates[0]
+    candidates.sort(key=lambda x: os.stat(
+        os.path.join(os.getcwd(), x)).st_mtime, reverse=True)
+    return candidates[0]
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Python Requires')
+    parser.add_argument('--outdir',
+                        help='osc service parameter that does nothing')
+    args = parser.parse_args()
+
+    filename = get_tarball_candidate()
 
     # dict of tuple with requirements and their source
     requires_complete = dict()

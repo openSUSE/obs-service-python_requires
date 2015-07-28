@@ -20,6 +20,10 @@ try:
 except ImportError:
     import unittest
 import imp
+import os
+import shutil
+import tempfile
+import time
 
 
 # NOTE(toabctl): Hack to import non-module file for testing
@@ -119,6 +123,31 @@ class UpdateRequiresCompleteTest(unittest.TestCase):
                              {"python-foo": ("5.0", "initsrc")},
                              {"python-foo": "2.0"}, "mysrc"))
 
+
+class TarballFinderTest(unittest.TestCase):
+    def setUp(self):
+        self._tmpdir = tempfile.mkdtemp(
+            prefix='obs-service-python_requires-test-')
+        os.chdir(self._tmpdir)
+
+    def tearDown(self):
+        shutil.rmtree(self._tmpdir)
+
+    def test_get_tarball_candidate_1(self):
+        print(self._tmpdir)
+        open('oslo.db-2.0.0.tar.gz', 'a').close()
+        time.sleep(0.01)
+        open('oslo.db-1.12.0.tar.gz', 'a').close()
+        self.assertEqual(pr.get_tarball_candidate(),
+                         'oslo.db-1.12.0.tar.gz')
+
+    def test_get_tarball_candidate_2(self):
+        print(self._tmpdir)
+        open('oslo.db-1.12.0.tar.gz', 'a').close()
+        time.sleep(0.01)
+        open('oslo.db-2.0.0.tar.gz', 'a').close()
+        self.assertEqual(pr.get_tarball_candidate(),
+                         'oslo.db-2.0.0.tar.gz')
 
 if __name__ == '__main__':
     unittest.main()
