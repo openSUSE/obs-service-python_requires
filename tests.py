@@ -83,6 +83,12 @@ class SanitizeRequirementsTests(unittest.TestCase):
                          pr.sanitize_requirements(
                              "hacking>=0.10.0,<0.11\nqpid-python"))
 
+    def test_ignore_parameters(self):
+        self.assertEqual(
+            {},
+            pr.sanitize_requirements(
+                "-e git://github.com/openstack/horizon.git"))
+
     def test_with_markers(self):
         """ allow markers in requirement lines"""
         self.assertEqual(
