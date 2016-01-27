@@ -111,6 +111,14 @@ class SanitizeRequirementsTests(unittest.TestCase):
             pr.sanitize_requirements(
                 "futures>=3.0\n[:python_version=='2.6']\nunittest2"))
 
+    def test_skip_windows_requires(self):
+        """ Ignore requirements with win32 marker"""
+        self.assertEqual(
+            {"python-true": "1"},
+            pr.sanitize_requirements(
+                "true>=1\n"
+                "wmi;sys_platform=='win32'\n"))
+
 
 class UpdateRequiresCompleteTest(unittest.TestCase):
     def test_empty(self):

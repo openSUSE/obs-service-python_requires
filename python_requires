@@ -100,7 +100,10 @@ def sanitize_requirements(requirements):
         # ignore for now markers (see PEP 0426 and also
         # https://pip.pypa.io/en/latest/reference/pip_install.html#requirements-file-format
         # TODO(toabctl): parse and use markers
-        l = l.split(";")[0]
+        l, _, linemarker = l.partition(";")
+        # Hacky check for ignoring win32 requirements
+        if linemarker == "sys_platform=='win32'":
+            continue
 
         # in egg/requires.txt, there are sections starting with "[" for markers
         if not l or l.startswith("-f") or l.startswith("["):
