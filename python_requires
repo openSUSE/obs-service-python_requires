@@ -224,6 +224,7 @@ if __name__ == '__main__':
             run_requires_source = f
         except Exception:
             run_requires = ""
+            run_requires_source = ""
         else:
             break
 
