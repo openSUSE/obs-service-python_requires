@@ -20,7 +20,7 @@ import os
 import re
 import tarfile
 
-import pkg_resources
+from packaging.requirements import Requirement
 
 
 def read_from_tarball(tar_name, filename):
@@ -97,13 +97,6 @@ def sanitize_requirements(requirements):
         l = re.sub('[ \t]*', '', l)
         # ignore for now the requirements like '-e git://'
         l = re.sub(r'\s*-e.*', '', l)
-        # ignore for now markers (see PEP 0426 and also
-        # https://pip.pypa.io/en/latest/reference/pip_install.html#requirements-file-format
-        # TODO(toabctl): parse and use markers
-        l, _, linemarker = l.partition(";")
-        # Hacky check for ignoring win32 requirements
-        if linemarker == "sys_platform=='win32'":
-            continue
 
         # in egg/requires.txt, there are sections starting with "[" for markers
         if not l or l.startswith("-f") or l.startswith("["):
@@ -116,35 +109,32 @@ def sanitize_requirements(requirements):
         if re.match('^python-(.*)client', l):
             l = re.sub(r'^python-(.+client)', r'\g<1>', l)
 
-        pkg = pkg_resources.Requirement.parse(l)
-        pkg_name = pkg.unsafe_name
+        r = Requirement(l)
+        if r.marker:
+            # TODO (toabctl): currently we hardcode python 2.7 and linux2
+            # see https://www.python.org/dev/peps/pep-0508/#environment-markers
+            marker_env = {'python_version': '2.7', 'sys_platform': 'linux'}
+            if not r.marker.evaluate(environment=marker_env):
+                continue
+
+        pkg_name = r.name
         version_dep = None
-        strict_version_dep = None
 
-        for dep in pkg.specs:
-            version = pkg_resources.parse_version(dep[1])
-            if dep[0] == '>=':
-                # try to use the lowest version available
-                # i.e. for ">=0.8.4,>=0.9.7", select "0.8.4"
-                if (not version_dep or
-                        version <
-                        pkg_resources.parse_version(version_dep)):
-                    version_dep = dep[1]
-            elif dep[0] == '==':
-                # same here - select lowest version
-                if (not strict_version_dep or
-                        version <
-                        pkg_resources.parse_version(strict_version_dep)):
-                    strict_version_dep = dep[1]
+        if r.specifier:
+            # we want the lowest possible version
+            # NOTE(toabctl): "min(r.specifier)" doesn't work.
+            lowest = None
+            for s in r.specifier:
+                # we don't want a lowest version which is not allowed
+                if s.operator == '!=':
+                    continue
+                if not lowest or s.version < lowest.version:
+                    lowest = s
 
-        if version_dep:
-            d["python-%s" % (pkg_name)] = version_dep
-        elif strict_version_dep:
-            # We are not as strict as upstream, we always allow newer versions
-            # otherwise upgrading is a PITA
-            d["python-%s" % (pkg_name)] = strict_version_dep
-        elif len(pkg_name):
-            d["python-%s" % (pkg_name)] = None
+            if lowest:
+                version_dep = lowest.version
+
+        d["python-%s" % (pkg_name)] = version_dep
 
     # ignore some requirements
     ignore_requires = (
