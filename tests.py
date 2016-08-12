@@ -123,6 +123,15 @@ class SanitizeRequirementsTests(unittest.TestCase):
                 "true>=1\n"
                 "wmi;sys_platform=='win32'\n"))
 
+    def test_skip_python3_requires(self):
+        """ Ignore requirements with python3 marker"""
+        self.assertEqual(
+            {"python-ovs": "2.5.0"},
+            pr.sanitize_requirements(
+                "ovs>=2.5.0;python_version=='2.7' # Apache-2.0\n"
+                "ovs>=2.6.0.dev1;python_version>='3.4' # Apache-2.0\n")
+        )
+
 
 class UpdateRequiresCompleteTest(unittest.TestCase):
     def test_empty(self):
