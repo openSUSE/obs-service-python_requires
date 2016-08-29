@@ -18,24 +18,9 @@ import argparse
 import glob
 import os
 import re
-import tarfile
 
+from metaextract import utils as meta_utils
 from packaging.requirements import Requirement
-
-
-def read_from_tarball(tar_name, filename):
-    with tarfile.open(tar_name) as tar:
-        try:
-            file_found = min((f for f in tar.getnames()
-                              if f.endswith(filename)),
-                             key=len)
-        except ValueError:
-            raise Exception("Coud not find a file %s in %s" %
-                            (filename, tar_name))
-        t = tar.getmember(file_found)
-        file_content = tar.extractfile(t).read()
-
-    return file_content
 
 
 def parse_update_spec_file(specfile, contents, run_requires):
@@ -52,7 +37,7 @@ def parse_update_spec_file(specfile, contents, run_requires):
         contents = re.sub(
             r'^(Requires(?:\(.*\))?:[ \t]+)(%s)(?:[ \t].*)?$' % (d),
             r'\g<1>\g<2>%s' %
-            (" >= " + run_requires[d][0] if run_requires[d][0] else ""),
+            (" >= " + run_requires[d] if run_requires[d] else ""),
             contents, flags=re.MULTILINE | re.IGNORECASE)[:]
 
     if not specfile.endswith("-doc.spec"):
@@ -63,8 +48,7 @@ def parse_update_spec_file(specfile, contents, run_requires):
 
         if all_requires.difference(found_requires):
             for d in all_requires.difference(found_requires):
-                print("ERROR: %s is missing in %s "
-                      "(source: %s)" % (d, specfile, run_requires[d][1]))
+                print("ERROR: %s is missing in %s"  % (d, specfile))
 
         for d in spec_requires.difference(all_requires):
             if d.lower() in all_requires:
@@ -90,7 +74,7 @@ def update_spec_files(run_requires):
 def sanitize_requirements(requirements):
     d = dict()
 
-    for l in requirements.split('\n'):
+    for l in requirements:
         # strip away comments
         l = re.sub('#.*', ' ', l)
         # strip away whitespace
@@ -154,18 +138,6 @@ def sanitize_requirements(requirements):
     return real_requires
 
 
-def update_requires_complete(requires_complete,
-                             requires_new, requires_new_source):
-    """Update the requires_complete list of dicts with new values.
-
-    keep track of the source of the requirements.
-    """
-
-    for key, val in requires_new.items():
-        requires_complete[key] = (val, requires_new_source)
-    return requires_complete
-
-
 def get_tarball_candidate():
     # Try to find the tarball
     candidates = set()
@@ -188,39 +160,15 @@ if __name__ == '__main__':
     filename = get_tarball_candidate()
 
     # dict of tuple with requirements and their source
-    requires_complete = dict()
+    run_requires_list = list()
+    requires_meta = meta_utils.from_archive(filename)
+    if requires_meta['data']['install_requires']:
+        run_requires_list += requires_meta['data']['install_requires']
+    if requires_meta['data']['extras_require']:
+        run_requires_list += requires_meta['data']['extras_require']
+    if requires_meta['data']['tests_require']:
+        run_requires_list += requires_meta['data']['tests_require']
 
-    # test requirements
-    for f in ('/test-requirements-py2.txt', '/test-requirements.txt'):
-        try:
-            test_requires = read_from_tarball(filename, f)
-            test_requires_source = f
-        except Exception:
-            test_requires = ""
-            test_requires_source = ""
-        else:
-            break
+    run_requires = sanitize_requirements(run_requires_list)
 
-    test_requires = sanitize_requirements(test_requires)
-    requires_complete = update_requires_complete(requires_complete,
-                                                 test_requires,
-                                                 test_requires_source)
-
-    # runtime requirements
-    for f in ('.egg-info/requires.txt', '/requirements-py2.txt',
-              '/requirements.txt'):
-        try:
-            run_requires = read_from_tarball(filename, f)
-            run_requires_source = f
-        except Exception:
-            run_requires = ""
-            run_requires_source = ""
-        else:
-            break
-
-    run_requires = sanitize_requirements(run_requires)
-    requires_complete = update_requires_complete(requires_complete,
-                                                 run_requires,
-                                                 run_requires_source)
-
-    update_spec_files(requires_complete)
+    update_spec_files(run_requires)

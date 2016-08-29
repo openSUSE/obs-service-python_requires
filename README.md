@@ -5,3 +5,6 @@ An Open Build Service Source Service for refreshing
 spec file Requires: with the versioned dependencies from
 the pypi / python related tarballs.
 
+
+## requirements
+See ```requirements.txt```.
