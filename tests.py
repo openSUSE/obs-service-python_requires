@@ -159,13 +159,14 @@ class TarballFinderTest(unittest.TestCase):
 
 class UpdateSpecFileTest(unittest.TestCase):
     def test_parse_update_spec_file_no_changes(self):
-        content_init = "\n".join(
-            ["Name: testpackage",
-             "Requires: pkg1",
-             "BuildRequires: pkg1 >= 1.0",
-            ])
+        content_init = "\n".join([
+            "Name: testpackage",
+            "Requires: pkg1",
+            "BuildRequires: pkg1 >= 1.0",
+        ])
         content_expected = content_init
-        self.assertEqual(content_expected,
+        self.assertEqual(
+            content_expected,
             pr.parse_update_spec_file(
                 "testpackage.spec", content_init,
                 {'install': {}, 'extras': {}, 'tests': {}})
@@ -173,18 +174,24 @@ class UpdateSpecFileTest(unittest.TestCase):
 
     def test_parse_update_spec_file(self):
         """update Requires, keep BuildRequires"""
-        content_init = "\n".join(
-            ["Requires: pkg1 >=1.0",
-             "BuildRequires: pkg1 >= 1.0",
-            ])
-        content_expected = "\n".join(
-            ["Requires: pkg1 >= 2.0",
-             "BuildRequires: pkg1 >= 1.0",
-            ])
-        self.assertEqual(content_expected,
+        content_init = "\n".join([
+            "Requires: pkg1 >=1.0",
+            "BuildRequires: pkg1 >= 1.0",
+        ])
+        content_expected = "\n".join([
+            "Requires: pkg1 >= 2.0",
+            "BuildRequires: pkg1 >= 1.0",
+        ])
+        self.assertEqual(
+            content_expected,
             pr.parse_update_spec_file(
-                "testpackage.spec", content_init,
-                {'install': {"pkg1": "2.0"}, 'extras': {}, 'tests': {}})
+                "testpackage.spec",
+                content_init, {
+                    'install': {"pkg1": "2.0"},
+                    'extras': {},
+                    'tests': {}
+                }
+            )
         )
 
 
@@ -198,7 +205,7 @@ class BaseTests(unittest.TestCase):
                 'extras': {},
                 'tests': {'testpkg': '1.0'}}
         self.assertEqual(pr._get_complete_requires(reqs),
-                         { 'instpkg': None, 'testpkg': '1.0'})
+                         {'instpkg': None, 'testpkg': '1.0'})
 
 if __name__ == '__main__':
     unittest.main()
