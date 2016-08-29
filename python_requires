@@ -23,12 +23,32 @@ from metaextract import utils as meta_utils
 from packaging.requirements import Requirement
 
 
-def parse_update_spec_file(specfile, contents, run_requires):
-    found_requires = set()
-    all_requires = set()
+def _requires_get_source(all_requires, pkg):
+    if pkg in all_requires['install']:
+        return 'install'
+    elif pkg in all_requires['extras']:
+        return 'extras'
+    elif pkg in all_requires['tests']:
+        return 'tests'
+    else:
+        return 'unknown'
 
-    for d in run_requires:
-        all_requires.add(d)
+
+def _get_complete_requires(all_requires):
+    """get a dict with all requirements from 'install', 'extras' and 'tests'"""
+    complete_requires = dict()
+    complete_requires.update(all_requires['tests'])
+    complete_requires.update(all_requires['extras'])
+    complete_requires.update(all_requires['install'])
+    return complete_requires
+
+
+def parse_update_spec_file(specfile, contents, all_requires):
+    found_requires = set()
+    # complete dict of requires ('install', 'extras' and 'tests')
+    complete_requires = _get_complete_requires(all_requires)
+
+    for d in complete_requires:
 
         if re.search(r'^(Build)?Requires(?:\(.*\))?:\s+%s' % (d), contents,
                      flags=re.MULTILINE | re.IGNORECASE) >= 0:
@@ -37,7 +57,7 @@ def parse_update_spec_file(specfile, contents, run_requires):
         contents = re.sub(
             r'^(Requires(?:\(.*\))?:[ \t]+)(%s)(?:[ \t].*)?$' % (d),
             r'\g<1>\g<2>%s' %
-            (" >= " + run_requires[d] if run_requires[d] else ""),
+            (" >= " + complete_requires[d] if complete_requires[d] else ""),
             contents, flags=re.MULTILINE | re.IGNORECASE)[:]
 
     if not specfile.endswith("-doc.spec"):
@@ -46,11 +66,14 @@ def parse_update_spec_file(specfile, contents, run_requires):
                              contents, flags=re.MULTILINE | re.IGNORECASE):
             spec_requires.add("python-%s" % m.group(1))
 
-        if all_requires.difference(found_requires):
-            for d in all_requires.difference(found_requires):
-                print("ERROR: %s is missing in %s"  % (d, specfile))
+        complete_requires_keys = set(complete_requires)
 
-        for d in spec_requires.difference(all_requires):
+        for d in complete_requires_keys.difference(found_requires):
+            src = _requires_get_source(all_requires, d)
+            print("ERROR: %s is missing in %s (source: %s)" % (
+                d, specfile, src))
+
+        for d in spec_requires.difference(complete_requires_keys):
             if d.lower() in all_requires:
                 continue
             print("W: %s is not found in upstream" % d)
@@ -58,14 +81,14 @@ def parse_update_spec_file(specfile, contents, run_requires):
     return contents
 
 
-def update_spec_files(run_requires):
+def update_spec_files(all_requires):
     for specfile in glob.glob('./*.spec'):
         try:
             f = open(specfile, 'r+')
             contents = f.read()
             f.seek(0)
             f.truncate()
-            contents = parse_update_spec_file(specfile, contents, run_requires)
+            contents = parse_update_spec_file(specfile, contents, all_requires)
             f.write(contents)
         finally:
             f.close()
@@ -159,16 +182,21 @@ if __name__ == '__main__':
 
     filename = get_tarball_candidate()
 
-    # dict of tuple with requirements and their source
-    run_requires_list = list()
     requires_meta = meta_utils.from_archive(filename)
+    all_requires = dict()
+    all_requires['install'] = []
     if requires_meta['data']['install_requires']:
-        run_requires_list += requires_meta['data']['install_requires']
+        all_requires['install'] = sanitize_requirements(
+            requires_meta['data']['install_requires'])
+
+    all_requires['extras'] = []
     if requires_meta['data']['extras_require']:
-        run_requires_list += requires_meta['data']['extras_require']
+        all_requires['extras'] = sanitize_requirements(
+            requires_meta['data']['extras_require'])
+
+    all_requires['tests'] = []
     if requires_meta['data']['tests_require']:
-        run_requires_list += requires_meta['data']['tests_require']
+        all_requires['tests'] = sanitize_requirements(
+            requires_meta['data']['tests_require'])
 
-    run_requires = sanitize_requirements(run_requires_list)
-
-    update_spec_files(run_requires)
+    update_spec_files(all_requires)

@@ -167,7 +167,8 @@ class UpdateSpecFileTest(unittest.TestCase):
         content_expected = content_init
         self.assertEqual(content_expected,
             pr.parse_update_spec_file(
-                "testpackage.spec", content_init, {})
+                "testpackage.spec", content_init,
+                {'install': {}, 'extras': {}, 'tests': {}})
         )
 
     def test_parse_update_spec_file(self):
@@ -182,9 +183,22 @@ class UpdateSpecFileTest(unittest.TestCase):
             ])
         self.assertEqual(content_expected,
             pr.parse_update_spec_file(
-                "testpackage.spec", content_init, {"pkg1": "2.0"})
+                "testpackage.spec", content_init,
+                {'install': {"pkg1": "2.0"}, 'extras': {}, 'tests': {}})
         )
 
+
+class BaseTests(unittest.TestCase):
+    def test__requires_get_source_install(self):
+        reqs = {'install': {'testpkg': None}, 'extras': [], 'tests': []}
+        self.assertEqual(pr._requires_get_source(reqs, 'testpkg'), 'install')
+
+    def test_get_complete_requires(self):
+        reqs = {'install': {'instpkg': None},
+                'extras': {},
+                'tests': {'testpkg': '1.0'}}
+        self.assertEqual(pr._get_complete_requires(reqs),
+                         { 'instpkg': None, 'testpkg': '1.0'})
 
 if __name__ == '__main__':
     unittest.main()
