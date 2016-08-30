@@ -175,37 +175,63 @@ class UpdateSpecFileTest(unittest.TestCase):
     def test_parse_update_spec_file(self):
         """update Requires, keep BuildRequires"""
         content_init = "\n".join([
-            "Requires: pkg1 >=1.0",
-            "BuildRequires: pkg1 >= 1.0",
+            "Requires: python-pkg1 >=1.0",
+            "BuildRequires: python-pkg1 >= 1.0",
         ])
         content_expected = "\n".join([
-            "Requires: pkg1 >= 2.0",
-            "BuildRequires: pkg1 >= 1.0",
+            "Requires: python-pkg1 >= 2.0",
+            "BuildRequires: python-pkg1 >= 1.0",
         ])
         self.assertEqual(
             content_expected,
             pr.parse_update_spec_file(
                 "testpackage.spec",
                 content_init, {
-                    'install': {"pkg1": "2.0"},
-                    'extras': {},
-                    'tests': {}
+                    "install_requires": [
+                        "pkg1>=2.0",
+                    ],
                 }
             )
         )
 
 
 class BaseTests(unittest.TestCase):
-    def test__requires_get_source_install(self):
-        reqs = {'install': {'testpkg': None}, 'extras': [], 'tests': []}
-        self.assertEqual(pr._requires_get_source(reqs, 'testpkg'), 'install')
+    def _get_metaextract_fixture_1(self):
+        return {
+            "install_requires": [
+                "Paste",
+                "ovs>=2.5.0",
+                "ryu!=4.1,!=4.2,!=4.2.1,!=4.4,>=3.30",
+            ],
+            "tests_require": [
+                "WebOb",
+            ],
+            "extras_require": {
+                ":(python_version!='2.7')": [
+                    "Routes!=2.0,!=2.3.0,>=1.12.3"
+                ],
+                ":(python_version>='3.4')": [
+                    "ovs>=2.6.0.dev3"
+                ],
+                ":(python_version=='2.7')": [
+                    "testpkg>=123"
+                ]
+            }
+        }
 
     def test_get_complete_requires(self):
-        reqs = {'install': {'instpkg': None},
-                'extras': {},
-                'tests': {'testpkg': '1.0'}}
-        self.assertEqual(pr._get_complete_requires(reqs),
-                         {'instpkg': None, 'testpkg': '1.0'})
+        # requirement (from metaextract's 'data' key)
+        reqs = self._get_metaextract_fixture_1()
+        self.assertDictEqual(
+            pr._get_complete_requires(reqs),
+            {
+                "python-Paste": (None, "install"),
+                "python-ovs": ("2.5.0", "install"),
+                "python-ryu": ("3.30", "install"),
+                "python-WebOb": (None, "tests"),
+                "python-testpkg": ("123", "extras"),
+            }
+        )
 
 if __name__ == '__main__':
     unittest.main()
