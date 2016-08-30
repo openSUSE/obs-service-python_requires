@@ -23,23 +23,46 @@ from metaextract import utils as meta_utils
 from packaging.requirements import Requirement
 
 
-def _requires_get_source(all_requires, pkg):
-    if pkg in all_requires['install']:
-        return 'install'
-    elif pkg in all_requires['extras']:
-        return 'extras'
-    elif pkg in all_requires['tests']:
-        return 'tests'
-    else:
-        return 'unknown'
-
-
 def _get_complete_requires(all_requires):
-    """get a dict with all requirements from 'install', 'extras' and 'tests'"""
+    """get a dict with all requirements from metaextract"""
     complete_requires = dict()
-    complete_requires.update(all_requires['tests'])
-    complete_requires.update(all_requires['extras'])
-    complete_requires.update(all_requires['install'])
+
+    if 'tests_require' in all_requires:
+        sanitized = sanitize_requirements(all_requires['tests_require'])
+        # add the source of the requirement
+        for key, val in sanitized.items():
+            sanitized[key] = (val, 'tests')
+        complete_requires.update(sanitized)
+
+    if 'extras_require' in all_requires:
+        # extras_require is a dict of where the values are str or lists
+        # and the key can be a marker (i.e. ":(python_version>='3.4')")
+        if all_requires['extras_require']:
+            extras_require = list()
+            for key, val in all_requires['extras_require'].items():
+                # check if the key is a marker
+                marker = ""
+                if key.startswith(":"):  # it's marker
+                    marker = key[1:]
+                if isinstance(val, list):
+                    for v in val:
+                        extras_require.append("%s;%s" % (v, marker))
+                else:
+                    extras_require.append("%s;%s" % (val, marker))
+
+            sanitized = sanitize_requirements(extras_require)
+            # add the source of the requirement
+            for key, val in sanitized.items():
+                sanitized[key] = (val, 'extras')
+            complete_requires.update(sanitized)
+
+    if 'install_requires' in all_requires:
+        sanitized = sanitize_requirements(all_requires['install_requires'])
+        # add the source of the requirement
+        for key, val in sanitized.items():
+            sanitized[key] = (val, 'install')
+        complete_requires.update(sanitized)
+
     return complete_requires
 
 
@@ -49,7 +72,6 @@ def parse_update_spec_file(specfile, contents, all_requires):
     complete_requires = _get_complete_requires(all_requires)
 
     for d in complete_requires:
-
         if re.search(r'^(Build)?Requires(?:\(.*\))?:\s+%s' % (d), contents,
                      flags=re.MULTILINE | re.IGNORECASE) is not None:
             found_requires.add(d)
@@ -57,7 +79,8 @@ def parse_update_spec_file(specfile, contents, all_requires):
         contents = re.sub(
             r'^(Requires(?:\(.*\))?:[ \t]+)(%s)(?:[ \t].*)?$' % (d),
             r'\g<1>\g<2>%s' %
-            (" >= " + complete_requires[d] if complete_requires[d] else ""),
+            (" >= " + complete_requires[d][0] if complete_requires[d][0]
+             else ""),
             contents, flags=re.MULTILINE | re.IGNORECASE)[:]
 
     if not specfile.endswith("-doc.spec"):
@@ -69,9 +92,8 @@ def parse_update_spec_file(specfile, contents, all_requires):
         complete_requires_keys = set(complete_requires)
 
         for d in complete_requires_keys.difference(found_requires):
-            src = _requires_get_source(all_requires, d)
             print("ERROR: %s is missing in %s (source: %s)" % (
-                d, specfile, src))
+                d, specfile, complete_requires[d][1]))
 
         for d in spec_requires.difference(complete_requires_keys):
             if d.lower() in all_requires:
@@ -183,20 +205,5 @@ if __name__ == '__main__':
     filename = get_tarball_candidate()
 
     requires_meta = meta_utils.from_archive(filename)
-    all_requires = dict()
-    all_requires['install'] = []
-    if requires_meta['data']['install_requires']:
-        all_requires['install'] = sanitize_requirements(
-            requires_meta['data']['install_requires'])
 
-    all_requires['extras'] = []
-    if requires_meta['data']['extras_require']:
-        all_requires['extras'] = sanitize_requirements(
-            requires_meta['data']['extras_require'])
-
-    all_requires['tests'] = []
-    if requires_meta['data']['tests_require']:
-        all_requires['tests'] = sanitize_requirements(
-            requires_meta['data']['tests_require'])
-
-    update_spec_files(all_requires)
+    update_spec_files(requires_meta['data'])
