@@ -51,7 +51,7 @@ def parse_update_spec_file(specfile, contents, all_requires):
     for d in complete_requires:
 
         if re.search(r'^(Build)?Requires(?:\(.*\))?:\s+%s' % (d), contents,
-                     flags=re.MULTILINE | re.IGNORECASE) >= 0:
+                     flags=re.MULTILINE | re.IGNORECASE) is not None:
             found_requires.add(d)
 
         contents = re.sub(
