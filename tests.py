@@ -215,7 +215,12 @@ class BaseTests(unittest.TestCase):
                 ],
                 ":(python_version=='2.7')": [
                     "testpkg>=123"
-                ]
+                ],
+                "postgresql": [
+                    "SQLAlchemy<1.1.0,>=0.9.7",
+                    "psycopg2"
+                ],
+
             }
         }
 
@@ -237,6 +242,8 @@ class BaseTests(unittest.TestCase):
                 "python-ryu": ("3.30", "install"),
                 "python-WebOb": (None, "tests"),
                 "python-testpkg": ("123", "extras"),
+                "python-SQLAlchemy": ("0.9.7", "extras"),
+                "python-psycopg2": (None, "extras"),
             }
         )
 

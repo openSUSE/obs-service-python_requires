@@ -42,10 +42,10 @@ def _get_complete_requires(all_requires):
             # check if the key is a marker
             marker = ""
             if key.startswith(":"):  # it's marker
-                marker = key[1:]
+                marker = ";%s" % key[1:]
             if isinstance(val, list):
                 for v in val:
-                    extras_require.append("%s;%s" % (v, marker))
+                    extras_require.append("%s%s" % (v, marker))
             else:
                 extras_require.append("%s;%s" % (val, marker))
 
