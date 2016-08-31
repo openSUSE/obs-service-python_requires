@@ -215,8 +215,20 @@ class BaseTests(unittest.TestCase):
                 ],
                 ":(python_version=='2.7')": [
                     "testpkg>=123"
-                ]
+                ],
+                "postgresql": [
+                    "SQLAlchemy<1.1.0,>=0.9.7",
+                    "psycopg2"
+                ],
+
             }
+        }
+
+    def _get_metaextract_fixture_2(self):
+        return {
+            "install_requires": None,
+            "tests_require": None,
+            "extras_require": None,
         }
 
     def test_get_complete_requires(self):
@@ -230,8 +242,16 @@ class BaseTests(unittest.TestCase):
                 "python-ryu": ("3.30", "install"),
                 "python-WebOb": (None, "tests"),
                 "python-testpkg": ("123", "extras"),
+                "python-SQLAlchemy": ("0.9.7", "extras"),
+                "python-psycopg2": (None, "extras"),
             }
         )
+
+    def test_get_complete_requires_empty(self):
+        # requirement (from metaextract's 'data' key)
+        reqs = self._get_metaextract_fixture_2()
+        self.assertDictEqual(pr._get_complete_requires(reqs), {})
+
 
 if __name__ == '__main__':
     unittest.main()

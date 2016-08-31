@@ -27,36 +27,35 @@ def _get_complete_requires(all_requires):
     """get a dict with all requirements from metaextract"""
     complete_requires = dict()
 
-    if 'tests_require' in all_requires:
+    if 'tests_require' in all_requires and all_requires['tests_require']:
         sanitized = sanitize_requirements(all_requires['tests_require'])
         # add the source of the requirement
         for key, val in sanitized.items():
             sanitized[key] = (val, 'tests')
         complete_requires.update(sanitized)
 
-    if 'extras_require' in all_requires:
+    if 'extras_require' in all_requires and all_requires['extras_require']:
         # extras_require is a dict of where the values are str or lists
         # and the key can be a marker (i.e. ":(python_version>='3.4')")
-        if all_requires['extras_require']:
-            extras_require = list()
-            for key, val in all_requires['extras_require'].items():
-                # check if the key is a marker
-                marker = ""
-                if key.startswith(":"):  # it's marker
-                    marker = key[1:]
-                if isinstance(val, list):
-                    for v in val:
-                        extras_require.append("%s;%s" % (v, marker))
-                else:
-                    extras_require.append("%s;%s" % (val, marker))
+        extras_require = list()
+        for key, val in all_requires['extras_require'].items():
+            # check if the key is a marker
+            marker = ""
+            if key.startswith(":"):  # it's marker
+                marker = ";%s" % key[1:]
+            if isinstance(val, list):
+                for v in val:
+                    extras_require.append("%s%s" % (v, marker))
+            else:
+                extras_require.append("%s;%s" % (val, marker))
 
-            sanitized = sanitize_requirements(extras_require)
-            # add the source of the requirement
-            for key, val in sanitized.items():
-                sanitized[key] = (val, 'extras')
-            complete_requires.update(sanitized)
+        sanitized = sanitize_requirements(extras_require)
+        # add the source of the requirement
+        for key, val in sanitized.items():
+            sanitized[key] = (val, 'extras')
+        complete_requires.update(sanitized)
 
-    if 'install_requires' in all_requires:
+    if 'install_requires' in all_requires and all_requires['install_requires']:
         sanitized = sanitize_requirements(all_requires['install_requires'])
         # add the source of the requirement
         for key, val in sanitized.items():
