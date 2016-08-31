@@ -219,6 +219,13 @@ class BaseTests(unittest.TestCase):
             }
         }
 
+    def _get_metaextract_fixture_2(self):
+        return {
+            "install_requires": None,
+            "tests_require": None,
+            "extras_require": None,
+        }
+
     def test_get_complete_requires(self):
         # requirement (from metaextract's 'data' key)
         reqs = self._get_metaextract_fixture_1()
@@ -232,6 +239,12 @@ class BaseTests(unittest.TestCase):
                 "python-testpkg": ("123", "extras"),
             }
         )
+
+    def test_get_complete_requires_empty(self):
+        # requirement (from metaextract's 'data' key)
+        reqs = self._get_metaextract_fixture_2()
+        self.assertDictEqual(pr._get_complete_requires(reqs), {})
+
 
 if __name__ == '__main__':
     unittest.main()
