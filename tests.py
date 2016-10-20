@@ -271,6 +271,20 @@ class TestContentSetterGetter(unittest.TestCase):
 
         self.assertEquals('hello', data)
 
+    def test_set_contents_utf8(self):
+        f = StringIO.StringIO()
+
+        pr.set_contents(f, u'ű')
+
+        self.assertEquals(u'ű', f.getvalue().decode('utf-8'))
+
+    def test_get_contents_utf8(self):
+        f = StringIO.StringIO(u'ű'.encode('utf-8'))
+
+        data = pr.get_contents(f)
+
+        self.assertEquals(u'ű', data)
+
 
 if __name__ == '__main__':
     unittest.main()
