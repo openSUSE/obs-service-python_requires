@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #
 # Copyright 2015 SUSE Linux GmbH
 #
@@ -24,6 +25,7 @@ import os
 import shutil
 import tempfile
 import time
+import StringIO
 
 
 # NOTE(toabctl): Hack to import non-module file for testing
@@ -251,6 +253,23 @@ class BaseTests(unittest.TestCase):
         # requirement (from metaextract's 'data' key)
         reqs = self._get_metaextract_fixture_2()
         self.assertDictEqual(pr._get_complete_requires(reqs), {})
+
+
+class TestContentSetterGetter(unittest.TestCase):
+
+    def test_set_contents_ascii(self):
+        f = StringIO.StringIO()
+
+        pr.set_contents(f, 'hello')
+
+        self.assertEquals('hello', f.getvalue())
+
+    def test_get_contents_ascii(self):
+        f = StringIO.StringIO('hello')
+
+        data = pr.get_contents(f)
+
+        self.assertEquals('hello', data)
 
 
 if __name__ == '__main__':
