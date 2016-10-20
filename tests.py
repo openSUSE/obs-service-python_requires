@@ -18,14 +18,15 @@
 # py26 compat
 try:
     import unittest2 as unittest
+    from StringIO import StringIO as InMemFile
 except ImportError:
     import unittest
+    from io import BytesIO as InMemFile
 import imp
 import os
 import shutil
 import tempfile
 import time
-import StringIO
 
 
 # NOTE(toabctl): Hack to import non-module file for testing
@@ -258,28 +259,28 @@ class BaseTests(unittest.TestCase):
 class TestContentSetterGetter(unittest.TestCase):
 
     def test_set_contents_ascii(self):
-        f = StringIO.StringIO()
+        f = InMemFile()
 
         pr.set_contents(f, 'hello')
 
-        self.assertEquals('hello', f.getvalue())
+        self.assertEquals(b'hello', f.getvalue())
 
     def test_get_contents_ascii(self):
-        f = StringIO.StringIO('hello')
+        f = InMemFile(b'hello')
 
         data = pr.get_contents(f)
 
         self.assertEquals('hello', data)
 
     def test_set_contents_utf8(self):
-        f = StringIO.StringIO()
+        f = InMemFile()
 
         pr.set_contents(f, u'ű')
 
         self.assertEquals(u'ű', f.getvalue().decode('utf-8'))
 
     def test_get_contents_utf8(self):
-        f = StringIO.StringIO(u'ű'.encode('utf-8'))
+        f = InMemFile(u'ű'.encode('utf-8'))
 
         data = pr.get_contents(f)
 
