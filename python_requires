@@ -102,15 +102,23 @@ def parse_update_spec_file(specfile, contents, all_requires):
     return contents
 
 
+def get_contents(fhandle):
+    return fhandle.read().decode('utf-8')
+
+
+def set_contents(fhandle, contents):
+    fhandle.write(contents.encode('utf-8'))
+
+
 def update_spec_files(all_requires):
     for specfile in glob.glob('./*.spec'):
         try:
             f = open(specfile, 'r+')
-            contents = f.read()
+            contents = get_contents(f)
             f.seek(0)
             f.truncate()
             contents = parse_update_spec_file(specfile, contents, all_requires)
-            f.write(contents)
+            set_contents(f, contents)
         finally:
             f.close()
 

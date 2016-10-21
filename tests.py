@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #
 # Copyright 2015 SUSE Linux GmbH
 #
@@ -17,8 +18,10 @@
 # py26 compat
 try:
     import unittest2 as unittest
+    from StringIO import StringIO as InMemFile
 except ImportError:
     import unittest
+    from io import BytesIO as InMemFile
 import imp
 import os
 import shutil
@@ -251,6 +254,37 @@ class BaseTests(unittest.TestCase):
         # requirement (from metaextract's 'data' key)
         reqs = self._get_metaextract_fixture_2()
         self.assertDictEqual(pr._get_complete_requires(reqs), {})
+
+
+class TestContentSetterGetter(unittest.TestCase):
+
+    def test_set_contents_ascii(self):
+        f = InMemFile()
+
+        pr.set_contents(f, 'hello')
+
+        self.assertEquals(b'hello', f.getvalue())
+
+    def test_get_contents_ascii(self):
+        f = InMemFile(b'hello')
+
+        data = pr.get_contents(f)
+
+        self.assertEquals('hello', data)
+
+    def test_set_contents_utf8(self):
+        f = InMemFile()
+
+        pr.set_contents(f, u'ű')
+
+        self.assertEquals(u'ű', f.getvalue().decode('utf-8'))
+
+    def test_get_contents_utf8(self):
+        f = InMemFile(u'ű'.encode('utf-8'))
+
+        data = pr.get_contents(f)
+
+        self.assertEquals(u'ű', data)
 
 
 if __name__ == '__main__':
