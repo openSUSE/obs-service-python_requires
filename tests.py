@@ -85,6 +85,21 @@ class SanitizeRequirementsTests(unittest.TestCase):
                          pr.sanitize_requirements(
                              ["xyz>=1,>=2", "foo>=4,>=3.1"]))
 
+    def test_invalid_minor_version(self):
+        """select lowest but higher than invalid minor versions"""
+        self.assertEqual({"python-pecan": "1.0.5"},
+                         pr.sanitize_requirements(
+                             ["pecan!=1.0.2,!=1.0.3,!=1.0.4,>=1.0.0"]))
+        self.assertEqual({"python-pecan": "1.0.21"},
+                         pr.sanitize_requirements(
+                             ["pecan!=1.0.2,!=1.0.3,!=1.0.20,>=1.0.0"]))
+
+    def test_invalid_minor_version_with_higher_major(self):
+        """select lowest but higher than invalid minor versions"""
+        self.assertEqual({"python-pecan": "1.0.5"},
+                         pr.sanitize_requirements(
+                             ["pecan!=1.0.2,!=1.0.3,!=1.0.4,>=1.0.0,>=2.0.0"]))
+
     def test_ignore_list(self):
         self.assertEqual({},
                          pr.sanitize_requirements(
