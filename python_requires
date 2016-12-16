@@ -21,8 +21,6 @@ import re
 
 from metaextract import utils as meta_utils
 from packaging.requirements import Requirement
-from packaging.specifiers import Specifier
-from packaging.version import Version
 
 
 def _get_complete_requires(all_requires):
@@ -159,38 +157,17 @@ def sanitize_requirements(requirements):
         version_dep = None
 
         if r.specifier:
-            # a list with unwanted sources
-            not_wanted = []
             # we want the lowest possible version
             # NOTE(toabctl): "min(r.specifier)" doesn't work.
             lowest = None
             for s in r.specifier:
                 # we don't want a lowest version which is not allowed
                 if s.operator == '!=':
-                    not_wanted.append(s)
                     continue
                 if not lowest or s.version < lowest.version:
                     lowest = s
 
             if lowest:
-                # check that our minor version is higher than all unwanted
-                # versions if the major version is equal
-                for nw in sorted(not_wanted,
-                                 key=lambda x: Version(x.version)):
-                    # only if everything except the last char is equal and a
-                    # not wanted requirement is > than the current one
-                    if Version(nw.version) > Version(lowest.version) and \
-                       nw.version.rsplit('.', 1)[0] == \
-                       lowest.version.rsplit('.', 1)[0]:
-                        try:
-                            v = nw.version.rsplit('.', 1)[0]
-                            v_minor = int(nw.version.rsplit('.', 1)[1])
-                            v_minor = v_minor + 1
-                            nw_increased = Specifier('>= %s.%s' % (v, v_minor))
-                        except:
-                            pass
-                        else:
-                            lowest = nw_increased
                 version_dep = lowest.version
 
         d["python-%s" % (pkg_name)] = version_dep
