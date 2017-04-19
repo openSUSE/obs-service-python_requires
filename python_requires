@@ -162,7 +162,7 @@ def sanitize_requirements(requirements):
             lowest = None
             for s in r.specifier:
                 # we don't want a lowest version which is not allowed
-                if s.operator == '!=':
+                if s.operator == '!=' or s.operator == '<':
                     continue
                 if not lowest or s.version < lowest.version:
                     lowest = s
