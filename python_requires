@@ -20,6 +20,7 @@ import os
 import re
 
 from metaextract import utils as meta_utils
+from packaging.version import parse
 from packaging.requirements import Requirement
 
 
@@ -169,6 +170,20 @@ def sanitize_requirements(requirements):
 
             if lowest:
                 version_dep = lowest.version
+
+        # handle pre-release deps
+        if version_dep:
+            version_dep_python = parse(version_dep)
+            if version_dep_python.is_prerelease:
+                version_dep_rpm = version_dep_python.public
+                # we need to add the 'x' in front of alpha/beta release because
+                # in the python world, "1.1a10" > "1.1.dev10"
+                # but in the rpm world, "1.1~a10" < "1.1~dev10"
+                version_dep_rpm = version_dep_rpm.replace('a', '~xalpha')
+                version_dep_rpm = version_dep_rpm.replace('b', '~xbeta')
+                version_dep_rpm = version_dep_rpm.replace('rc', '~rc')
+                version_dep_rpm = version_dep_rpm.replace('.dev', '~dev')
+                version_dep = version_dep_rpm
 
         d["python-%s" % (pkg_name)] = version_dep
 

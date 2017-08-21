@@ -52,6 +52,8 @@ class SanitizeRequirementsTests(unittest.TestCase):
                          pr.sanitize_requirements(["xyz>=1"]))
         self.assertEqual({"python-xyz": "1.2.3"},
                          pr.sanitize_requirements(["xyz >= 1.2.3"]))
+        self.assertEqual({"python-xyz": "1.2.3~xbeta1"},
+                         pr.sanitize_requirements(["xyz >= 1.2.3b1"]))
 
     def test_single_with_only_lower_version(self):
         self.assertEqual({"python-lz4": None},
