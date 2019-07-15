@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 #
 # Copyright 2012 SUSE Linux
 #
@@ -103,23 +103,15 @@ def parse_update_spec_file(specfile, contents, all_requires):
     return contents
 
 
-def get_contents(fhandle):
-    return fhandle.read().decode('utf-8')
-
-
-def set_contents(fhandle, contents):
-    fhandle.write(contents.encode('utf-8'))
-
-
 def update_spec_files(all_requires):
     for specfile in glob.glob('./*.spec'):
         try:
             f = open(specfile, 'r+')
-            contents = get_contents(f)
+            contents = f.read()
             f.seek(0)
             f.truncate()
             contents = parse_update_spec_file(specfile, contents, all_requires)
-            set_contents(f, contents)
+            f.write(contents)
         finally:
             f.close()
 
